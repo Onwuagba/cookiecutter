@@ -11,8 +11,13 @@ db_type = "{{ cookiecutter.db_type }}"
 
 
 def install_requirements():
+    print("Installing requirements...")
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+
+    print("Installing pre-commit...")
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "pre-commit"])
 
 
 def run_command(command):
@@ -129,6 +134,11 @@ def setup_project():
     # check env file exists
     check_env_file()
 
+    # add whitenoise if set
+    add_whitenoise_middleware()
+
+    replace_app_name()
+
 
 def install_database_lib(db_type):
     """Install the relevant database library."""
@@ -215,8 +225,23 @@ DATABASES = {
 
 
 def update_requirements():
+    """
+    Update the requirements.txt file with the current package versions
+    and install pre-commit hooks.
+
+    This function is idempotent and safe to run multiple times.
+    """
+
+    # Capture the output of `pip freeze` and write to `requirements.txt`
+    with open("requirements.txt", "w") as f:
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "freeze"], stdout=f)
+
+    # Install pre-commit hooks
     subprocess.check_call(
-        [sys.executable, "-m", "pip", "freeze", ">", "requirements.txt"])
+        ["pre-commit", "install", "--install-hooks"])
+
+    print("Requirements updated and pre-commit hooks installed.")
 
 
 def setup_celery():
@@ -564,6 +589,22 @@ def update_db_url(db_type):
 
 
 def check_env_file():
+    """
+    Check if the .env file exists. If not, create one from .env.example.
+
+    Replace placeholders in the .env file with actual values:
+
+    - SECRET_KEY: a randomly generated secret key
+    - DATABASE_URL: based on the selected db_type
+    - CELERY_BROKER_URL: if Celery is enabled, set to redis://localhost:6379/0
+
+    Verify that the .env file contains the required variables:
+
+    - SECRET_KEY
+    - ALLOWED_HOSTS
+
+    Exit with an error message if any of the above checks fail.
+    """
     env_file = ".env"
     env_example = ".env.example"
 
@@ -617,6 +658,86 @@ def check_env_file():
         exit(1)
 
     print("Environment file check complete.")
+
+
+def add_whitenoise_middleware():
+    settings_file = "{{ cookiecutter.project_slug }}/settings.py"
+
+    # Read the settings file
+    with open(settings_file, 'r') as file:
+        content = file.read()
+
+    # Insert WhiteNoise middleware after SecurityMiddleware
+    security_middleware = "'django.middleware.security.SecurityMiddleware',"
+    whitenoise_middleware = "'whitenoise.middleware.WhiteNoiseMiddleware',"
+
+    if whitenoise_middleware not in content:
+        # Insert WhiteNoise middleware in the correct position
+        content = content.replace(
+            security_middleware,
+            f"{security_middleware}\n    {whitenoise_middleware}"
+        )
+
+    # Add STATIC_ROOT setting if not present
+    if "STATIC_ROOT" not in content:
+        static_root = "\nSTATIC_ROOT = BASE_DIR / 'staticfiles'\n"
+        content += static_root
+
+    # Write the updated content to the settings file
+    with open(settings_file, 'w') as file:
+        file.write(content)
+
+    print("Whitenoise middleware and STATIC_ROOT added to settings.py.")
+
+    # Create the templates folder if it does not exist
+    templates_dir = os.path.join(
+        "{{ cookiecutter.project_slug }}", "templates")
+    if not os.path.exists(templates_dir):
+        os.makedirs(templates_dir)
+        print(f"Created templates directory at: {templates_dir}")
+
+    # Update the TEMPLATES setting
+    update_templates_dir_in_settings()
+
+
+def update_templates_dir_in_settings():
+    settings_file = "{{ cookiecutter.project_slug }}/settings.py"
+
+    with open(settings_file, 'r') as file:
+        content = file.read()
+
+    # Check if 'DIRS' is in TEMPLATES settings and update the template directory
+    if "'DIRS':" in content:
+        content = content.replace(
+            "'DIRS': [],",
+            f"'DIRS': [BASE_DIR / 'templates'],"
+        )
+
+    # Write the updated settings back to the file
+    with open(settings_file, 'w') as file:
+        file.write(content)
+
+    print("TEMPLATES DIR updated in settings.py.")
+
+
+def replace_app_name():
+    app_name = "{{ cookiecutter.app_name }}"
+    files_to_update = [
+        "manage.py",
+        "{{ cookiecutter.project_slug }}/settings.py",
+        "{{ cookiecutter.project_slug }}/urls.py",
+        f"{{ cookiecutter.project_slug }}/{app_name}/apps.py"
+    ]
+
+    for file_path in files_to_update:
+        with open(file_path, 'r') as file:
+            content = file.read()
+
+        content = content.replace(
+            "{{ cookiecutter.app_name }}", app_name)
+
+        with open(file_path, 'w') as file:
+            file.write(content)
 
 
 if __name__ == '__main__':
