@@ -1,0 +1,50 @@
+{
+    "project_name": "Kene Default Django project",
+    "project_slug": "{{ cookiecutter.project_name.lower()|replace(' ', '_')|replace('-', '_')|replace('.', '_')|trim() }}",
+    "app_name": "core",
+    "project_type": [
+        "VAS",
+        "Notification",
+        "General"
+    ],
+    "use_celery": [
+        "y",
+        "n"
+    ],
+    "use_redis": [
+        "y",
+        "n"
+    ],
+    "use_postgres": [
+        "y",
+        "n"
+    ],
+    "use_docker": [
+        "y",
+        "n"
+    ],
+    "use_rest_framework": [
+        "y",
+        "n"
+    ],
+    "use_jwt": [
+        "y",
+        "n"
+    ],
+    "ci_tool": [
+        "GitLab",
+        "Jenkins"
+    ],
+    "db_type": [
+        "PostgreSQL",
+        "SQL Server",
+        "SQLite",
+        "Oracle"
+    ],
+    "deployment_server": "localhost",
+    "deployment_user": "root",
+    "author_name": "Kenenna Onwuagba",
+    "email": "onwuagbakenenna@gmail.com",
+    "description": "default project setup for django projects",
+    "repo_link": "git@github.com:user/my_repo.git"
+}

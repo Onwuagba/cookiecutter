@@ -1,0 +1,46 @@
+# Core
+Django
+python-dotenv
+
+# REST API
+djangorestframework
+django-filter
+markdown
+drf-yasg
+
+# Authentication
+djangorestframework-jwt==1.11.0
+
+# Task Queue
+celery
+redis
+
+# WSGI Server
+gunicorn
+
+# Static Files
+whitenoise
+
+# Security
+django-cors-headers
+django-csp
+
+
+# Testing
+pytest
+pytest-django
+factory-boy
+
+# Code Quality
+flake8
+black
+isort
+mypy
+
+
+# Development
+django-debug-toolbar
+ipython
+
+# Deployment
+docker

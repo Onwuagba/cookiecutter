@@ -1,0 +1,55 @@
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG
+
+before_script:
+  - echo "Building the Docker image"
+
+test:
+  stage: test
+  image: python:3.9
+  script:
+    - pip install -r requirements.txt
+    - python manage.py test
+
+build:
+  stage: build
+  script:
+    - TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    - TARBALL="{{cookiecutter.project_slug}}_${TIMESTAMP}.tar"
+    - docker build -t $DOCKER_IMAGE .
+    - docker save $DOCKER_IMAGE > $TARBALL
+  artifacts:
+    paths:
+      - $TARBALL
+  only:
+    - develop
+
+deploy:
+  stage: deploy
+  script:
+    # Copy tarball to the server
+    - scp image.tar {{cookiecutter.deployment_user}}@{{cookiecutter.deployment_server}}:/path/to/image/
+    
+    # Load the image on the server
+    - ssh {{cookiecutter.deployment_user}}@{{cookiecutter.deployment_server}} 'docker load < /path/to/image/image.tar'
+    
+    # Run the container
+    - ssh {{cookiecutter.deployment_user}}@{{cookiecutter.deployment_server}} 'docker run -d --name {{cookiecutter.project_slug}} $DOCKER_IMAGE'
+    
+    # Make sure the /docs page is not accessible in production
+    # - ssh {{cookiecutter.deployment_user}}@{{cookiecutter.deployment_server}} 'docker exec {{cookiecutter.project_slug}} curl -X PATCH http://localhost:8000/docs/disable'
+    
+  only:
+    - develop
+
+check_docs:
+  stage: test
+  script:
+    - curl -f http://localhost:8000/docs || echo "Docs page accessible! Disabling..."
+  only:
+    - main
