@@ -11,6 +11,9 @@ db_type = "{{ cookiecutter.db_type }}"
 
 
 def install_requirements():
+    print("Setting up virtual environment...")
+    setup_virtualenv()
+
     print("Installing requirements...")
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
@@ -738,6 +741,26 @@ def replace_app_name():
 
         with open(file_path, 'w') as file:
             file.write(content)
+
+
+def setup_virtualenv():
+    if not os.path.exists('venv'):
+        subprocess.check_call([sys.executable, "-m", "venv", "venv"])
+
+    if os.name == 'nt':  # Windows
+        activate_script = os.path.join(
+            'venv', 'Scripts', 'activate.bat')
+    else:
+        activate_script = os.path.join('venv', 'bin', 'activate')
+
+    # Run the activation script
+    if os.name == 'nt':
+        subprocess.call(activate_script, shell=True)
+    else:
+        subprocess.call(f"source {activate_script}", shell=True)
+
+    print(
+        f"Virtual environment created. ")
 
 
 if __name__ == '__main__':
