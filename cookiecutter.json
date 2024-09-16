@@ -1,5 +1,5 @@
 {
-    "project_name": "Kene Default Django project",
+    "project_name": "Django project",
     "project_slug": "{{ cookiecutter.project_name.lower()|replace(' ', '_')|replace('-', '_')|replace('.', '_')|trim() }}",
     "app_name": "core",
     "project_type": [
@@ -43,8 +43,8 @@
     ],
     "deployment_server": "localhost",
     "deployment_user": "root",
+    "repo_link": "git@github.com:user/my_repo.git",
     "author_name": "Kenenna Onwuagba",
     "email": "onwuagbakenenna@gmail.com",
-    "description": "default project setup for django projects",
-    "repo_link": "git@github.com:user/my_repo.git"
+    "description": "default project setup for django projects"
 }

@@ -1,5 +1,7 @@
 import os
+import random
 import re
+import string
 import subprocess
 import sys
 import shutil
@@ -80,7 +82,7 @@ def setup_project():
     use_celery = "{{ cookiecutter.use_celery }}" == "y"
     use_redis = "{{ cookiecutter.use_redis }}" == "y"
     use_docker = "{{ cookiecutter.use_docker }}" == "y"
-    use_sentry = "{{ cookiecutter.use_sentry }}" == "y"
+    # use_sentry = "{{ cookiecutter.use_sentry }}" == "y"
     use_rest_framework = "{{ cookiecutter.use_rest_framework }}" == "y"
     use_graphql = "{{ cookiecutter.use_graphql }}" == "y"
     use_jwt = "{{ cookiecutter.use_jwt }}" == "y"
@@ -103,8 +105,8 @@ def setup_project():
         remove_docker_files()
 
     # Setup Sentry
-    if use_sentry:
-        setup_sentry()
+    # if use_sentry:
+    #     setup_sentry()
 
     # Setup REST framework
     if use_rest_framework:
@@ -541,26 +543,84 @@ repos:
     print("Pre-commit config setup complete.")
 
 
+def generate_secret_key():
+    """Generate a Django secret key."""
+    chars = string.ascii_letters + string.digits + string.punctuation
+    return ''.join(random.SystemRandom().choice(chars) for _ in range(50))
+
+
+def update_db_url(db_type):
+    """Generate the DATABASE_URL based on the selected db_type."""
+    if db_type == "PostgreSQL":
+        return "postgres://user:password@localhost:5432/dbname"
+    elif db_type == "SQL Server":
+        return "mssql://user:password@localhost:1433/dbname"
+    elif db_type == "SQLite":
+        return "sqlite:///db.sqlite3"
+    elif db_type == "Oracle":
+        return "oracle://user:password@localhost:1521/dbname"
+    else:
+        return ""
+
+
 def check_env_file():
-    env = ".env"
-    if not os.path.exists(env):
-        print(".env file is missing. Create one using the .env.example")
+    env_file = ".env"
+    env_example = ".env.example"
+
+    if not os.path.exists(env_file):
+        print(f"{env_file} is missing. Creating one from {env_example}...")
+
+        # Copy .env.example content to .env
+        shutil.copy(env_example, env_file)
+
+        # Read the .env file
+        with open(env_file, 'r') as file:
+            env_content = file.read()
+
+        # Generate SECRET_KEY and replace the placeholder
+        secret_key = generate_secret_key()
+        env_content = env_content.replace(
+            "your-secret-key-here", secret_key)
+
+        # Update DATABASE_URL based on the selected db_type
+        db_type = "{{ cookiecutter.db_type }}"
+        db_url = update_db_url(db_type)
+        env_content = env_content.replace(
+            "postgres://user:password@localhost:5432/dbname", db_url)
+
+        # Add Celery broker URL if Celery is enabled
+        use_celery = "{{ cookiecutter.use_celery }}"
+        if use_celery == "y":
+            broker_url = "CELERY_BROKER_URL=redis://localhost:6379/0"
+            if "CELERY_BROKER_URL" not in env_content:
+                env_content += f"\n{broker_url}"
+
+        # Write the updated content to the .env file
+        with open(env_file, 'w') as file:
+            file.write(env_content)
+
+        print(".env file created and updated.")
+
+    else:
+        print(".env file already exists. Verifying its content...")
+
+    # Check for required variables in the .env file
+    with open(env_file, 'r') as file:
+        env_content = file.read()
+
+    if "SECRET_KEY" not in env_content:
+        print("SECRET_KEY not found in .env. Please add it.")
         exit(1)
 
-    with open(env, 'w') as file:
-        if "SECRET_KEY" not in file.read():
-            print("SECRET_KEY not found in .env. Please add it.")
-            exit(1)
-
-    with open(env, 'w') as file:
-        if "ALLOWED_HOSTS" not in file.read():
-            print("ALLOWED_HOSTS not found in .env. Please add it.")
-            exit(1)
+    if "ALLOWED_HOSTS" not in env_content:
+        print("ALLOWED_HOSTS not found in .env. Please add it.")
+        exit(1)
 
     print("Environment file check complete.")
 
 
 if __name__ == '__main__':
+    print("Project setup started...")
     install_requirements()
     setup_project()
     initialize_git_and_push()
