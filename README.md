@@ -19,7 +19,7 @@ pip install cookiecutter
 1. Run the cookiecutter command:
 
 ```
-cookiecutter https://github.com/ubainnovate/cookiecutter-django-template.git
+cookiecutter https://github.com/Onwuagba/cookiecutter.git
 ```
 
 2. You will be prompted to enter values for the following variables:
