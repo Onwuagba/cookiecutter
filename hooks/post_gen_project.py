@@ -25,12 +25,14 @@ def install_requirements():
 
 def run_command(command):
     """Run a shell command and raise an error if it fails."""
-    result = subprocess.run(
-        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        raise Exception(
-            f"Command failed: {command}\n{result.stderr.decode('utf-8')}")
-    return result.stdout.decode('utf-8')
+    try:
+        result = subprocess.run(command, shell=True, check=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        print(f"Command failed: {command}")
+        print(f"Error output: {e.stderr}")
+        raise
 
 
 def branch_exists(branch_name):
