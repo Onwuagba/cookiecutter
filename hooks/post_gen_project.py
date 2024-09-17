@@ -88,6 +88,7 @@ def setup_project():
     project_type = "{{ cookiecutter.project_type }}"
     use_celery = "{{ cookiecutter.use_celery }}" == "y"
     use_redis = "{{ cookiecutter.use_redis }}" == "y"
+    use_whitenoise = "{{ cookiecutter.use_whitenoise }}" == "y"
     use_docker = "{{ cookiecutter.use_docker }}" == "y"
     use_rest_framework = "{{ cookiecutter.use_rest_framework }}" == "y"
     use_graphql = "{{ cookiecutter.use_graphql }}" == "y"
@@ -132,9 +133,10 @@ def setup_project():
     check_env_file()
 
     # add whitenoise if set
-    add_whitenoise_middleware()
+    if use_whitenoise:
+        add_whitenoise_middleware()
 
-    replace_app_name()
+    # replace_app_name()
 
 
 def install_database_lib(db_type):
@@ -785,6 +787,7 @@ def replace_app_name():
     ]
 
     for file_path in files_to_update:
+        print(f"- updating {file_path}...")
         with open(file_path, 'r') as file:
             content = file.read()
 
@@ -793,6 +796,7 @@ def replace_app_name():
 
         with open(file_path, 'w') as file:
             file.write(content)
+        print(f"- {file_path} updated successfully")
 
 
 def setup_virtualenv():
