@@ -34,6 +34,10 @@ repos:
     hooks:
       - id: check-commit-message
         name: Commit message check
-        entry: bash -c "COMMIT_MSG=$(cat $1); if ! echo \"$COMMIT_MSG\" | grep -E '^(feat|fix|update|docs|chore|refactor|test|style): '; then echo 'Invalid commit message. Use format: feat/fix/etc: Message'; exit 1; fi"
+        entry: |
+          bash -c "COMMIT_MSG=$(cat $1); 
+                   if ! echo \"$COMMIT_MSG\" | grep -E '^(feat|fix|update|docs|chore|refactor|test|style): '; 
+                   then echo 'Invalid commit message. Use format: feat/fix/etc: Message'; 
+                   exit 1; 
+                   fi"
         language: system
-        stages: [commit]
