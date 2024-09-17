@@ -248,7 +248,7 @@ def setup_celery():
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "celery"])
 
-    print("setting up celery...")
+    print("Setting up celery...")
     celery_file = f"{project_slug}/celery.py"
     with open(celery_file, 'w') as file:
         file.write("""
@@ -272,8 +272,11 @@ __all__ = ('celery_app',)
 
     # Update settings.py with Celery configurations
     settings_file = f"{project_slug}/settings.py"
-    with open(settings_file, 'a') as file:
-        file.write("""
+    with open(settings_file, 'r+') as file:
+        content = file.read()
+        if "CELERY_BROKER_URL" not in content:
+            file.seek(0, 2)  # Move to the end of the file
+            file.write("""
 # Celery configuration
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
@@ -281,7 +284,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
-        """)
+            """)
 
     print("Celery setup complete.")
 
@@ -650,56 +653,62 @@ def check_env_file():
     env_file = ".env"
     env_example = ".env.example"
 
-    if not os.path.exists(env_file):
-        print(f"{env_file} is missing. Creating one from {env_example}...")
+    try:
+        if not os.path.exists(env_file):
+            print(
+                f"{env_file} is missing. Creating one from {env_example}...")
 
-        # Copy .env.example content to .env
-        shutil.copy(env_example, env_file)
+            if not os.path.exists(env_example):
+                raise FileNotFoundError(
+                    f"{env_example} not found. Cannot create {env_file}.")
 
-        # Read the .env file
+            shutil.copy(env_example, env_file)
+
+            with open(env_file, 'r') as file:
+                env_content = file.read()
+
+            secret_key = generate_secret_key()
+            env_content = env_content.replace(
+                "your-secret-key-here", secret_key)
+
+            db_type = "{{ cookiecutter.db_type }}"
+            db_url = update_db_url(db_type)
+            env_content = env_content.replace(
+                "postgres://user:password@localhost:5432/dbname", db_url)
+
+            use_celery = "{{ cookiecutter.use_celery }}"
+            if use_celery == "y":
+                broker_url = "CELERY_BROKER_URL=redis://localhost:6379/0"
+                if "CELERY_BROKER_URL" not in env_content:
+                    env_content += f"\n{broker_url}"
+
+            with open(env_file, 'w') as file:
+                file.write(env_content)
+
+            print(".env file created and updated.")
+        else:
+            print(".env file already exists. Verifying its content...")
+
         with open(env_file, 'r') as file:
             env_content = file.read()
 
-        # Generate SECRET_KEY and replace the placeholder
-        secret_key = generate_secret_key()
-        env_content = env_content.replace(
-            "your-secret-key-here", secret_key)
+        if "SECRET_KEY" not in env_content:
+            raise ValueError(
+                "SECRET_KEY not found in .env. Please add it.")
 
-        # Update DATABASE_URL based on the selected db_type
-        db_type = "{{ cookiecutter.db_type }}"
-        db_url = update_db_url(db_type)
-        env_content = env_content.replace(
-            "postgres://user:password@localhost:5432/dbname", db_url)
+        if "ALLOWED_HOSTS" not in env_content:
+            raise ValueError(
+                "ALLOWED_HOSTS not found in .env. Please add it.")
 
-        # Add Celery broker URL if Celery is enabled
-        use_celery = "{{ cookiecutter.use_celery }}"
-        if use_celery == "y":
-            broker_url = "CELERY_BROKER_URL=redis://localhost:6379/0"
-            if "CELERY_BROKER_URL" not in env_content:
-                env_content += f"\n{broker_url}"
+        print("Environment file check complete.")
 
-        # Write the updated content to the .env file
-        with open(env_file, 'w') as file:
-            file.write(env_content)
-
-        print(".env file created and updated.")
-
-    else:
-        print(".env file already exists. Verifying its content...")
-
-    # Check for required variables in the .env file
-    with open(env_file, 'r') as file:
-        env_content = file.read()
-
-    if "SECRET_KEY" not in env_content:
-        print("SECRET_KEY not found in .env. Please add it.")
-        exit(1)
-
-    if "ALLOWED_HOSTS" not in env_content:
-        print("ALLOWED_HOSTS not found in .env. Please add it.")
-        exit(1)
-
-    print("Environment file check complete.")
+    except (IOError, OSError) as e:
+        print(
+            f"An error occurred while working with the .env file: {str(e)}")
+        sys.exit(1)
+    except ValueError as e:
+        print(str(e))
+        sys.exit(1)
 
 
 def add_whitenoise_middleware():
@@ -783,23 +792,29 @@ def replace_app_name():
 
 
 def setup_virtualenv():
-    if not os.path.exists('venv'):
-        subprocess.check_call([sys.executable, "-m", "venv", "venv"])
+    try:
+        if not os.path.exists('venv'):
+            subprocess.check_call(
+                [sys.executable, "-m", "venv", "venv"])
 
-    if os.name == 'nt':  # Windows
-        activate_script = os.path.join(
-            'venv', 'Scripts', 'activate.bat')
-    else:
-        activate_script = os.path.join('venv', 'bin', 'activate')
+        if os.name == 'nt':  # Windows
+            activate_script = os.path.join(
+                'venv', 'Scripts', 'activate.bat')
+        else:
+            activate_script = os.path.join('venv', 'bin', 'activate')
 
-    # Run the activation script
-    if os.name == 'nt':
-        subprocess.call(activate_script, shell=True)
-    else:
-        subprocess.call(f"source {activate_script}", shell=True)
+        if os.name == 'nt':
+            subprocess.call(activate_script, shell=True)
+        else:
+            subprocess.call(f"source {activate_script}", shell=True)
 
-    print(
-        f"Virtual environment created. ")
+        print("Virtual environment created and activated.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error creating virtual environment: {str(e)}")
+        sys.exit(1)
+    except OSError as e:
+        print(f"Error activating virtual environment: {str(e)}")
+        sys.exit(1)
 
 
 if __name__ == '__main__':
