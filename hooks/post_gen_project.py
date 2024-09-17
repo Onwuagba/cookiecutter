@@ -245,11 +245,11 @@ def update_requirements():
 
 def setup_celery():
     print("Installing celery...")
-    
+
     # Install specific versions of Celery and Kombu
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install",
-            "celery==5.2.3", "kombu==5.3.0"]
+            "celery==5.2.3", "kombu==5.3.0b3"]
     )
 
     print("Setting up celery...")
