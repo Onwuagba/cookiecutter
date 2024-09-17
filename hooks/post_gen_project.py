@@ -90,7 +90,6 @@ def setup_project():
     use_celery = "{{ cookiecutter.use_celery }}" == "y"
     use_redis = "{{ cookiecutter.use_redis }}" == "y"
     use_docker = "{{ cookiecutter.use_docker }}" == "y"
-    # use_sentry = "{{ cookiecutter.use_sentry }}" == "y"
     use_rest_framework = "{{ cookiecutter.use_rest_framework }}" == "y"
     use_graphql = "{{ cookiecutter.use_graphql }}" == "y"
     use_jwt = "{{ cookiecutter.use_jwt }}" == "y"
@@ -111,10 +110,6 @@ def setup_project():
     else:
         print("Docker not selected, removing Docker-related files.")
         remove_docker_files()
-
-    # Setup Sentry
-    # if use_sentry:
-    #     setup_sentry()
 
     # Setup REST framework
     if use_rest_framework:
