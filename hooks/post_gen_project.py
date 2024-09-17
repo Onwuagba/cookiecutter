@@ -45,26 +45,23 @@ def initialize_git_and_push():
     repo_link = "{{ cookiecutter.repo_link }}"
     print(f"Setting up repo at {repo_link}...")
 
-    # Initialize Git repository
-    run_command('git init')
+    try:
+        run_command('git init')
+        run_command('git add .')
+        run_command('git commit -m "Initial commit"')
+        run_command(f'git remote add origin {repo_link}')
 
-    # Add all files to Git
-    run_command('git add .')
-
-    # Commit initial files
-    run_command('git commit -m "Initial commit"')
-
-    # Add the remote repository
-    run_command(f'git remote add origin {repo_link}')
-
-    # Check if the 'develop' branch already exists
-    if branch_exists('develop'):
-        print("The 'develop' branch already exists, skipping branch creation.")
-    else:
-        # Create the develop branch and push it
-        run_command('git checkout -b develop')
-        run_command('git push -u origin develop')
-        print("The 'develop' branch has been created and pushed.")
+        if branch_exists('develop'):
+            print(
+                "The 'develop' branch already exists, skipping branch creation.")
+        else:
+            run_command('git checkout -b develop')
+            run_command('git push -u origin develop')
+            print("The 'develop' branch has been created and pushed.")
+    except Exception as e:
+        print(
+            f"An error occurred during Git initialization: {str(e)}")
+        print("Please check your repository settings and try again.")
 
 
 def remove_docker_files():
