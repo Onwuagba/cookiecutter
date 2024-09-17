@@ -243,6 +243,11 @@ def update_requirements():
 
 
 def setup_celery():
+    print("Installing celery...")
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "celery"])
+
+    print("setting up celery...")
     celery_file = f"{project_slug}/celery.py"
     with open(celery_file, 'w') as file:
         file.write("""
@@ -383,6 +388,15 @@ sentry_sdk.init(
 
 
 def setup_rest_framework():
+    print("Installing drf...")
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "djangorestframework"])
+
+    print("setting up django-filter...")
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "django-filter"])
+
+    print("Setting up rest-framework...")
     settings_file = f"{project_slug}/settings.py"
     with open(settings_file, 'r') as file:
         settings = file.read()
@@ -426,6 +440,11 @@ SWAGGER_SETTINGS = {
 
 
 def setup_graphql():
+    print("Installing django-graphene...")
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "graphene-django"])
+
+    print("Setting up django-graphene...")
     settings_file = f"{project_slug}/settings.py"
     with open(settings_file, 'r') as file:
         settings = file.read()
@@ -458,6 +477,11 @@ schema = graphene.Schema(query=Query)
 
 
 def setup_jwt():
+    print("Installing djangorestframework-simplejwt...")
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "djangorestframework-simplejwt"])
+
+    print("Setting up jwt...")
     settings_file = f"{project_slug}/settings.py"
     with open(settings_file, 'r') as file:
         settings = file.read()

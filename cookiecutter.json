@@ -35,6 +35,10 @@
         "y",
         "n"
     ],
+    "use_graphql": [
+        "y",
+        "n"
+    ],
     "ci_tool": [
         "GitLab",
         "Jenkins"

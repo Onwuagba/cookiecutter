@@ -3,8 +3,6 @@ Django
 python-dotenv
 
 # REST API
-djangorestframework
-django-filter
 markdown
 drf-yasg
 
@@ -12,7 +10,6 @@ drf-yasg
 djangorestframework-jwt==1.11.0
 
 # Task Queue
-celery
 redis
 
 # WSGI Server
