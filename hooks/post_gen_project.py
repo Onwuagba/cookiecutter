@@ -97,8 +97,8 @@ def setup_project():
     # Setup database
     if db_type:
         update_database_config(db_type, project_slug)
-        subprocess.check_call(
-            [sys.executable, "manage.py", "migrate"])
+        # subprocess.check_call(
+        #     [sys.executable, "manage.py", "migrate"])
 
     # Setup Celery
     if use_celery:
@@ -213,10 +213,12 @@ DATABASES = {
 }"""
 
     # Replace the existing DATABASES setting in settings.py
-    # settings = settings.replace("DATABASES = {", database_config)
-
     settings = re.sub(
-        r'DATABASES\s*=\s*\{[^}]*\}', database_config, settings, flags=re.DOTALL)
+        r'DATABASES\s*=\s*\{[^}]*\}',
+        database_config.strip(),  # Remove leading/trailing whitespace
+        settings,
+        flags=re.DOTALL
+    )
 
     with open(settings_file, 'w') as file:
         file.write(settings)
@@ -535,6 +537,19 @@ SIMPLE_JWT = {
 
 
 def setup_documentation(project_type: str):
+    """
+    Setup project-specific documentation.
+
+    Copies a documentation template from the templates folder to docs/index.md.
+    The template is chosen based on the project type, and the templates folder is
+    deleted afterward.
+
+    Args:
+        project_type: The type of the project (VAS, NOTIFICATION, or General).
+
+    Returns:
+        None
+    """
     docs_dir = os.path.join(os.getcwd(), 'docs')
     template_dir = os.path.join(docs_dir, 'templates')
 
@@ -546,10 +561,16 @@ def setup_documentation(project_type: str):
     else:  # General
         src_file = os.path.join(template_dir, 'general_template.md')
 
-    dest_file = os.path.join(docs_dir, 'project_docs.md')
+    dest_file = os.path.join(docs_dir, 'index.md')
 
     if os.path.exists(src_file):
+        # Copy the selected template to the docs directory
         shutil.copy(src_file, dest_file)
+        print(
+            f"Documentation template for {project_type} has been set up.")
+
+        # Remove the templates folder after copying the file
+        shutil.rmtree(template_dir, ignore_errors=True)
     else:
         print(
             f"Warning: Documentation template for {project_type} not found.")
