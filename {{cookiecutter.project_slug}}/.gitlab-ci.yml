@@ -26,7 +26,7 @@ build:
   stage: build
   script:
     - TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-    - TARBALL="${{{ cookiecutter.project_slug }}}_${TIMESTAMP}.tar"
+    - TARBALL="{{ cookiecutter.project_slug }}_${TIMESTAMP}.tar"
     - docker build -t $DOCKER_IMAGE .
     - docker save $DOCKER_IMAGE > $TARBALL
   artifacts:
@@ -44,7 +44,7 @@ deploy:
 
     - |
       ssh $DEPLOYMENT_USER@$DEPLOYMENT_SERVER '
-        docker run -d --name ${{ cookiecutter.project_slug }} \
+        docker run -d --name {{ cookiecutter.project_slug }} \
           -p $DEPLOYMENT_PORT:$DEPLOYMENT_PORT \
           -e DJANGO_SETTINGS_MODULE={{ cookiecutter.project_slug }}.settings \
           $DOCKER_IMAGE \
@@ -55,7 +55,7 @@ deploy:
       '
 
     # Make sure the /docs page is not accessible in production
-    # - ssh $DEPLOYMENT_USER@$DEPLOYMENT_SERVER 'docker exec ${{ cookiecutter.project_slug }} curl -X PATCH http://localhost:$DEPLOYMENT_PORT/docs/disable'
+    # - ssh $DEPLOYMENT_USER@$DEPLOYMENT_SERVER 'docker exec {{ cookiecutter.project_slug }} curl -X PATCH http://localhost:$DEPLOYMENT_PORT/docs/disable'
 
   only:
     - develop
