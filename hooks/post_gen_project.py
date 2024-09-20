@@ -108,6 +108,7 @@ def set_gitlab_variables():
     error = False
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "requests"])
+    import requests
 
     # Collect GitLab information
     project_id = input(
