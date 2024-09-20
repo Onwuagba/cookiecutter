@@ -337,7 +337,8 @@ def setup_celery():
 import os
 from celery import Celery
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', '{{ cookiecutter.project_slug }}.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE',
+                      '{{ cookiecutter.project_slug }}.settings')
 
 app = Celery('{{ cookiecutter.project_slug }}')
 app.config_from_object('django.conf:settings', namespace='CELERY')
@@ -360,8 +361,10 @@ __all__ = ('celery_app',)
             file.seek(0, 2)  # Move to the end of the file
             file.write("""
 # Celery configuration
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+CELERY_BROKER_URL = os.environ.get(
+    'CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get(
+    'CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -414,7 +417,8 @@ RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "{{ cookiecutter.project_slug }}.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000",
+    "{{ cookiecutter.project_slug }}.wsgi:application"]
             """)
 
     docker_compose = "docker-compose.yml"
@@ -685,33 +689,56 @@ def setup_documentation(project_type: str):
 def setup_pre_commit():
     pre_commit_config = ".pre-commit-config.yaml"
     if not os.path.exists(pre_commit_config):
+        print("Warning: precommit file not found")
         with open(pre_commit_config, 'w') as file:
             file.write("""
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.4.0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
     -   id: check-yaml
     -   id: check-added-large-files
+    -   id: check-ast
+    -   id: check-json
+    -   id: check-case-conflict
+    -   id: check-merge-conflict
+
 -   repo: https://github.com/psf/black
-    rev: 21.5b1
+    rev: 21.6b0
     hooks:
     -   id: black
+
 -   repo: https://github.com/PyCQA/flake8
-    rev: 3.9.2
+    rev: 7.0.0
     hooks:
     -   id: flake8
+
 -   repo: https://github.com/PyCQA/isort
-    rev: 5.8.0
+    rev: 5.13.2
     hooks:
     -   id: isort
+
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.812
+    rev: v1.3.0
     hooks:
     -   id: mypy
-        args: [--ignore-missing-imports]
+        args: [--strict]
+
+-   repo: local
+    hooks:
+      - id: check-commit-message
+        name: Commit message check
+        entry: |
+          bash -c "COMMIT_MSG=$(cat $1); 
+                   if ! echo \"$COMMIT_MSG\" | grep -E '^(feat|fix|update|docs|chore|refactor|test|style): '; 
+                   then echo 'Invalid commit message. Use format: (feat|fix|update|docs|chore|refactor|test|style): Message'; 
+                   exit 1; 
+                   fi"
+        language: system
+
+exclude: '\.venv'
             """)
 
     print("Pre-commit config setup complete.")
