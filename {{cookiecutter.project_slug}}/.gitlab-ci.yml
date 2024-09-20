@@ -1,3 +1,9 @@
+# To use this, create gitlab variables in your project repo settings matching below:
+# $DEPLOYMENT_USER -> server user
+# $DEPLOYMENT_SERVER -> server 
+# $DEPLOYMENT_PORT -> port
+# Use test environment credentials ooo... if you use production, that one na your concern
+
 stages:
   - test
   - build
@@ -20,7 +26,7 @@ build:
   stage: build
   script:
     - TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-    - TARBALL="{{cookiecutter.project_slug}}_${TIMESTAMP}.tar"
+    - TARBALL="${{{ cookiecutter.project_slug }}}_${TIMESTAMP}.tar"
     - docker build -t $DOCKER_IMAGE .
     - docker save $DOCKER_IMAGE > $TARBALL
   artifacts:
@@ -32,17 +38,24 @@ build:
 deploy:
   stage: deploy
   script:
-    # Copy tarball to the server
-    - scp image.tar {{cookiecutter.deployment_user}}@{{cookiecutter.deployment_server}}:/path/to/image/
+    - scp $TARBALL $DEPLOYMENT_USER@$DEPLOYMENT_SERVER:/home/admin/docker_images/
     
-    # Load the image on the server
-    - ssh {{cookiecutter.deployment_user}}@{{cookiecutter.deployment_server}} 'docker load < /path/to/image/image.tar'
+    - ssh $DEPLOYMENT_USER@$DEPLOYMENT_SERVER 'docker load < /home/admin/docker_images/$TARBALL'
     
-    # Run the container
-    - ssh {{cookiecutter.deployment_user}}@{{cookiecutter.deployment_server}} 'docker run -d --name {{cookiecutter.project_slug}} $DOCKER_IMAGE'
+    - |
+      ssh $DEPLOYMENT_USER@$DEPLOYMENT_SERVER '
+        docker run -d --name ${{ cookiecutter.project_slug }} \
+          -p $DEPLOYMENT_PORT:$DEPLOYMENT_PORT \
+          -e DJANGO_SETTINGS_MODULE={{ cookiecutter.project_slug }}.settings \
+          $DOCKER_IMAGE \
+          gunicorn {{ cookiecutter.project_slug }}.wsgi:application \
+          --bind 0.0.0.0:$DEPLOYMENT_PORT \
+          --workers 3 \
+          --log-level info
+      '
     
     # Make sure the /docs page is not accessible in production
-    # - ssh {{cookiecutter.deployment_user}}@{{cookiecutter.deployment_server}} 'docker exec {{cookiecutter.project_slug}} curl -X PATCH http://localhost:8000/docs/disable'
+    # - ssh $DEPLOYMENT_USER@$DEPLOYMENT_SERVER 'docker exec ${{ cookiecutter.project_slug }} curl -X PATCH http://localhost:$DEPLOYMENT_PORT/docs/disable'
     
   only:
     - develop
@@ -50,6 +63,6 @@ deploy:
 check_docs:
   stage: test
   script:
-    - curl -f http://localhost:8000/docs || echo "Docs page accessible! Disabling..."
+    - curl -f http://localhost:$DEPLOYMENT_PORT/docs || echo "Docs page accessible! Disabling..."
   only:
     - main

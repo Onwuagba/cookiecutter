@@ -84,6 +84,77 @@ def remove_docker_files():
         shutil.rmtree(docker_directory)
 
 
+def set_gitlab_variables():
+    """
+    Set GitLab CI/CD variables for the project.
+
+    This function asks the user to input their GitLab project ID and personal access
+    token. If the user enters 'MANUAL' as the project ID, the function will skip setting
+    the variables and return.
+
+    The function sets the following variables:
+
+    - DEPLOYMENT_USER: the username to use for deployment
+    - DEPLOYMENT_SERVER: the server to deploy to
+    - DEPLOYMENT_PORT: the port to use for deployment
+
+    The function will print a success message for each variable set, or an error message
+    if there's an issue setting the variable.
+
+    :return:
+    """
+
+    print("\n================\nSetting GitLab CI/CD variables...\n================\n")
+    error = False
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "requests"])
+
+    # Collect GitLab information
+    project_id = input(
+        "Enter your GitLab project ID (enter MANUAL if you want to setup manually): ")
+    token = input("Enter your GitLab personal access token: ")
+
+    if not token.strip():
+        token = input("Oga, enter your GitLab token naahhh: ")
+
+    if project_id.lower() == "manual" or not token or token.lower() == 'cancel':
+        print("\n You've chosen to set gitlab manually. \n")
+        print('ending gitlab setup...')
+        from time import sleep
+        sleep(0.05)  # sleep for 50ms
+        return
+
+    # Collect variables to set
+    variables = {
+        "DEPLOYMENT_USER": "{{ cookiecutter.deployment_user }}",
+        "DEPLOYMENT_SERVER": "{{ cookiecutter.deployment_server }}",
+        "DEPLOYMENT_PORT": "{{ cookiecutter.deployment_port }}",
+    }
+
+    url = f"https://gitlab.com/api/v4/projects/{project_id}/variables"
+    headers = {"PRIVATE-TOKEN": token}
+
+    for key, value in variables.items():
+        data = {
+            "key": key,
+            "value": value,
+            "protected": False,
+            "masked": True
+        }
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 201:
+            print(f"Successfully set variable: {key}")
+        else:
+            error = True
+            print(
+                f"Failed to set variable: {key}.
+                Status code: {response.status_code}"
+            )
+
+    if not error:
+        print("\n================\nGitLab CI/CD variables set successfully!\n================\n")
+
+
 def setup_project():
     project_type = "{{ cookiecutter.project_type }}"
     use_celery = "{{ cookiecutter.use_celery }}" == "y"
@@ -137,6 +208,9 @@ def setup_project():
         add_whitenoise_middleware()
 
     # replace_app_name()
+
+    # setup gitlab project variables
+    set_gitlab_variables()
 
 
 def install_database_lib(db_type):
@@ -296,6 +370,28 @@ CELERY_TIMEZONE = 'UTC'
 
 
 def setup_docker():
+    """
+    Set up Dockerfile and docker-compose.yml for the project.
+
+    Installs gunicorn, copies the requirements.txt file to the Docker image, and
+    runs the collectstatic management command to collect static files. Uses the
+    Docker Compose file to define a service for the web application and a service
+    for the database.
+
+    The Docker Compose file defines a service for the web application and a
+    service for the database. The web application service uses the Dockerfile to
+    build the image, sets the environment variables from the .env file, and maps
+    port 8000 on the host to port 8000 in the container. 
+
+    The .dockerignore file is used to ignore files and directories that should not
+    be included in the Docker image. The files and directories listed in the
+    .dockerignore file are ignored by Docker when building the image.
+    """
+
+    print("\n=====Setting up docker...\n=======")
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "gunicorn"])
+
     dockerfile = "Dockerfile"
     if not os.path.exists(dockerfile):
         with open(dockerfile, 'w') as file:
