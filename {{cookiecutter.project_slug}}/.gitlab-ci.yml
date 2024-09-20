@@ -1,6 +1,6 @@
 # To use this, create gitlab variables in your project repo settings matching below:
 # $DEPLOYMENT_USER -> server user
-# $DEPLOYMENT_SERVER -> server 
+# $DEPLOYMENT_SERVER -> server
 # $DEPLOYMENT_PORT -> port
 # Use test environment credentials ooo... if you use production, that one na your concern
 
@@ -39,9 +39,9 @@ deploy:
   stage: deploy
   script:
     - scp $TARBALL $DEPLOYMENT_USER@$DEPLOYMENT_SERVER:/home/admin/docker_images/
-    
+
     - ssh $DEPLOYMENT_USER@$DEPLOYMENT_SERVER 'docker load < /home/admin/docker_images/$TARBALL'
-    
+
     - |
       ssh $DEPLOYMENT_USER@$DEPLOYMENT_SERVER '
         docker run -d --name ${{ cookiecutter.project_slug }} \
@@ -53,10 +53,10 @@ deploy:
           --workers 3 \
           --log-level info
       '
-    
+
     # Make sure the /docs page is not accessible in production
     # - ssh $DEPLOYMENT_USER@$DEPLOYMENT_SERVER 'docker exec ${{ cookiecutter.project_slug }} curl -X PATCH http://localhost:$DEPLOYMENT_PORT/docs/disable'
-    
+
   only:
     - develop
 

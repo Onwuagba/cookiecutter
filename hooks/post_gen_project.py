@@ -1,10 +1,10 @@
 import os
 import random
 import re
+import shutil
 import string
 import subprocess
 import sys
-import shutil
 
 project_slug = "{{ cookiecutter.project_slug }}"
 db_type = "{{ cookiecutter.db_type }}"
@@ -147,8 +147,8 @@ def set_gitlab_variables():
         else:
             error = True
             print(
-                f"Failed to set variable: {key}.
-                Status code: {response.status_code}"
+                f"Failed to set variable: {key}." 
+                f"Status code: {response.status_code}"
             )
 
     if not error:
@@ -381,7 +381,7 @@ def setup_docker():
     The Docker Compose file defines a service for the web application and a
     service for the database. The web application service uses the Dockerfile to
     build the image, sets the environment variables from the .env file, and maps
-    port 8000 on the host to port 8000 in the container. 
+    port 8000 on the host to port 8000 in the container.
 
     The .dockerignore file is used to ignore files and directories that should not
     be included in the Docker image. The files and directories listed in the

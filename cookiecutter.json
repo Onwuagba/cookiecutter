@@ -51,6 +51,7 @@
     ],
     "deployment_server": "localhost",
     "deployment_user": "root",
+    "deployment_port": "8000",
     "repo_link": "git@github.com:user/my_repo.git",
     "author_name": "Kenenna Onwuagba",
     "email": "onwuagbakenenna@gmail.com",
