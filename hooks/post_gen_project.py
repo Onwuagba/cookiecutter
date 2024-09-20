@@ -113,12 +113,13 @@ def set_gitlab_variables():
     # Collect GitLab information
     project_id = input(
         "Enter your GitLab project ID (enter MANUAL if you want to setup manually): ")
-    token = input("Enter your GitLab personal access token: ")
+    token = input(
+        "Enter your GitLab personal access token or type CANCEL to skip: ")
 
     if not token.strip():
         token = input("Oga, enter your GitLab token naahhh: ")
 
-    if project_id.lower() == "manual" or not token or token.lower() == 'cancel':
+    if not project_id or project_id.lower() == "manual" or not token or token.lower() == 'cancel':
         print("\n You've chosen to set gitlab manually. \n")
         print('ending gitlab setup...')
         from time import sleep
@@ -148,7 +149,7 @@ def set_gitlab_variables():
         else:
             error = True
             print(
-                f"Failed to set variable: {key}." 
+                f"Failed to set variable: {key}."
                 f"Status code: {response.status_code}"
             )
 
