@@ -15,10 +15,6 @@
         "y",
         "n"
     ],
-    "use_postgres": [
-        "y",
-        "n"
-    ],
     "use_docker": [
         "y",
         "n"

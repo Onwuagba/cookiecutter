@@ -113,6 +113,7 @@ def set_gitlab_variables():
     # Collect GitLab information
     project_id = input(
         "Enter your GitLab project ID (enter MANUAL if you want to setup manually): ")
+
     token = input(
         "Enter your GitLab personal access token or type CANCEL to skip: ")
 
@@ -124,6 +125,7 @@ def set_gitlab_variables():
         print('ending gitlab setup...')
         from time import sleep
         sleep(0.05)  # sleep for 50ms
+        print('Gitlab variable setup cancelled.')
         return
 
     # Collect variables to set
@@ -291,7 +293,7 @@ DATABASES = {
 
     # Replace the existing DATABASES setting in settings.py
     settings = re.sub(
-        r'DATABASES\s*=\s*\{[^}]*\}',
+        r'DATABASES\s*=\s*\{[^}]*\}}',
         database_config.strip(),  # Remove leading/trailing whitespace
         settings,
         flags=re.DOTALL
