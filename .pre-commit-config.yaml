@@ -1,0 +1,50 @@
+default_language_version:
+  python: python3.9
+
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-added-large-files
+    -   id: check-ast
+    -   id: check-json
+    -   id: check-case-conflict
+    -   id: check-merge-conflict
+
+-   repo: https://github.com/psf/black
+    rev: 21.6b0
+    hooks:
+    -   id: black
+
+-   repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+    -   id: flake8
+
+-   repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+    -   id: isort
+
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.3.0
+    hooks:
+    -   id: mypy
+        args: [--strict]
+
+-   repo: local
+    hooks:
+      - id: check-commit-message
+        name: Commit message check
+        entry: |
+          bash -c "COMMIT_MSG=$(cat $1); 
+                   if ! echo \"$COMMIT_MSG\" | grep -E '^(feat|fix|update|docs|chore|refactor|test|style): '; 
+                   then echo 'Invalid commit message. Use format: (feat|fix|update|docs|chore|refactor|test|style): Message'; 
+                   exit 1; 
+                   fi"
+        language: system
+
+exclude: '\.venv'
