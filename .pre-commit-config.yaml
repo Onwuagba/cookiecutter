@@ -41,6 +41,9 @@ repos:
         name: Commit message check
         entry: |
           bash -c "COMMIT_MSG=$(cat $1);
+                    echo \"$COMMIT_MSG\";
+                    echo "Commit message file: $1" ;
+                    echo "Current directory: $(pwd)";
                    if ! echo \"$COMMIT_MSG\" | grep -E '^(feat|fix|update|docs|chore|refactor|test|style): ';
                    then echo 'Invalid commit message. Use format: (feat|fix|update|docs|chore|refactor|test|style): Message';
                    exit 1;
