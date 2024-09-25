@@ -1,0 +1,68 @@
+# To use this, create gitlab variables in your project repo settings matching below:
+# $DEPLOYMENT_USER -> server user
+# $DEPLOYMENT_SERVER -> server
+# $DEPLOYMENT_PORT -> port
+# Use test environment credentials ooo... if you use production, that one na your concern
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG
+
+before_script:
+  - echo "Building the Docker image"
+
+test:
+  stage: test
+  image: python:3.9
+  script:
+    - pip install -r requirements.txt
+    - python manage.py test
+
+build:
+  stage: build
+  script:
+    - TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    - TARBALL="{{ cookiecutter.project_slug }}_${TIMESTAMP}.tar"
+    - docker build -t $DOCKER_IMAGE .
+    - docker save $DOCKER_IMAGE > $TARBALL
+  artifacts:
+    paths:
+      - $TARBALL
+  only:
+    - develop
+
+deploy:
+  stage: deploy
+  script:
+    - scp $TARBALL $DEPLOYMENT_USER@$DEPLOYMENT_SERVER:/home/admin/docker_images/
+
+    - ssh $DEPLOYMENT_USER@$DEPLOYMENT_SERVER 'docker load < /home/admin/docker_images/$TARBALL'
+
+    - |
+      ssh $DEPLOYMENT_USER@$DEPLOYMENT_SERVER '
+        docker run -d --name {{ cookiecutter.project_slug }} \
+          -p $DEPLOYMENT_PORT:$DEPLOYMENT_PORT \
+          -e DJANGO_SETTINGS_MODULE={{ cookiecutter.project_slug }}.settings \
+          $DOCKER_IMAGE \
+          gunicorn {{ cookiecutter.project_slug }}.wsgi:application \
+          --bind 0.0.0.0:$DEPLOYMENT_PORT \
+          --workers 3 \
+          --log-level info
+      '
+
+    # Make sure the /docs page is not accessible in production
+    # - ssh $DEPLOYMENT_USER@$DEPLOYMENT_SERVER 'docker exec {{ cookiecutter.project_slug }} curl -X PATCH http://localhost:$DEPLOYMENT_PORT/docs/disable'
+
+  only:
+    - develop
+
+check_docs:
+  stage: test
+  script:
+    - curl -f http://localhost:$DEPLOYMENT_PORT/docs || echo "Docs page accessible! Disabling..."
+  only:
+    - main
